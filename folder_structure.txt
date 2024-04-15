@@ -1,0 +1,11 @@
+.
+├── __init__.py
+├── app
+│   ├── __init__.py
+│   └── application.py
+├── folder_structure.txt
+└── tests
+    ├── __init__.py
+    └── test_allocation.py
+
+3 directories, 6 files
