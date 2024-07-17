@@ -186,7 +186,7 @@ class User:
 class Post:
     post_id: int
     title: str
-    user_id: int
+    user_id: int = field(init=False)
 
     user: User = field(init=False, repr=False)
 

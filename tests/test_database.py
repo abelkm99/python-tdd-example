@@ -1,3 +1,4 @@
+from datetime import UTC, datetime
 from typing import cast
 import random
 from faker import Faker
@@ -11,6 +12,7 @@ from ..app.sql import (
     Location,
     Point,
     Post,
+    Reservation,
     Room,
     RoomStatus,
     Student,
@@ -33,7 +35,7 @@ async def test_user_can_be_created(db_session: AsyncSession):
     res = cast(CursorResult, res)
     print(res.rowcount)
 
-    stmt = select(User)
+    stmt = select(User).options(selectinload(User.posts))
     print(stmt)
     res = await db_session.execute(stmt)
     res = list(res.scalars().all())
@@ -78,7 +80,8 @@ async def test_user_post(db_session: AsyncSession):
     db_session.add(new_user)
     await db_session.flush()
 
-    new_post = Post(1, "A", new_user.user_id)
+    new_post = Post(1, "A")
+    new_post.user = new_user
     db_session.add(new_post)
 
     await db_session.commit()
@@ -113,7 +116,7 @@ async def test_room(db_session: AsyncSession):
 
     stmt = select(Room)
     res = await db_session.execute(stmt)
-    res = list(res.scalars().all())
+    res = list(res.scalars().unique().all())
 
     print(res)
     print(res[0].room_status)
@@ -122,12 +125,12 @@ async def test_room(db_session: AsyncSession):
 
 @pytest.mark.asyncio
 async def test_relation(db_session: AsyncSession):
-    # new_room = Room(name="Abella", room_status=RoomStatus.PENDING)
-    # t1 = datetime.now(tz=UTC)
-    # t2 = datetime.now(tz=UTC)
-    # new_reservation = Reservation(room=new_room, date_in=t1, date_out=t2)
-    # db_session.add(new_reservation)
-    # await db_session.commit()
+    new_room = Room(name="Abella", room_status=RoomStatus.PENDING)
+    t1 = datetime.now(tz=UTC)
+    t2 = datetime.now(tz=UTC)
+    new_reservation = Reservation(room=new_room, date_in=t1, date_out=t2)
+    db_session.add(new_reservation)
+    await db_session.commit()
 
     stmt = select(Room)
     res = await db_session.execute(stmt)
