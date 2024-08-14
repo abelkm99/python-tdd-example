@@ -64,7 +64,6 @@ async def db_session():
             await session.rollback()
             raise e
         finally:
-            print("***" * 10, "finally")
             # Clean up database
             tables = ", ".join(
                 '"' + table.name + '"'
