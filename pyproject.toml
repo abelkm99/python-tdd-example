@@ -1,0 +1,220 @@
+[project]
+authors = [
+  {name = "Able Kidanemariam", email = "abelkidanemariam 99 at gmail <dot> com"},
+]
+dependencies = [
+  "anyio>=3",
+  "httpx>=0.22",
+  "exceptiongroup; python_version < \"3.11\"",
+  "importlib-metadata; python_version < \"3.10\"",
+  "importlib-resources>=5.12.0; python_version < \"3.9\"",
+  "msgspec>=0.18.2",
+  "multidict>=6.0.2",
+  "polyfactory>=2.6.3",
+  "pyyaml",
+  "typing-extensions",
+]
+
+
+[project.urls]
+
+[project.optional-dependencies]
+
+[project.scripts]
+
+
+[tool.pdm]
+ignore_package_warnings = [
+  "pre-commit",
+]
+
+[tool.pdm.dev-dependencies]
+dev = [
+  "sqlalchemy>=2.0.3",
+  "asyncpg>=0.29.0",
+  "greenlet",
+  "python-dotenv",
+  "trio",
+]
+linting = [
+  "ruff>=0.2.1",
+  "mypy",
+  "pre-commit",
+  "slotscheck",
+  "codecov-cli",
+  "pyright==1.1.344",
+  "asyncpg-stubs",
+  "types-beautifulsoup4",
+  "types-python-jose",
+  "types-pyyaml",
+  "types-redis",
+  "types-psutil",
+]
+test = [
+  "covdefaults",
+  "pytest>=8.2.2",
+  "pytest-asyncio",
+  "pytest-cov",
+  "pytest-lazy-fixtures",
+  "pytest-mock",
+  "pytest-rerunfailures",
+  "pytest-timeout",
+  "pytest-xdist",
+  "time-machine",
+]
+
+[tool.pdm.scripts]
+ci = {composite = ["lint", "test"]}
+lint = "pre-commit run --all-files"
+test = "pytest tests"
+
+
+[tool.codespell]
+ignore-words-list = "selectin"
+skip = 'pdm.lock,docs/examples/contrib/sqlalchemy/us_state_lookup.json'
+
+
+[tool.pytest.ini_options]
+addopts = "--strict-markers --strict-config --dist=loadgroup -m 'not server_integration'"
+asyncio_mode = "auto"
+filterwarnings = [
+  "ignore::trio.TrioDeprecationWarning:anyio._backends._trio*:",
+  "ignore::DeprecationWarning:pkg_resources.*",
+  "ignore::DeprecationWarning:google.rpc",
+  "ignore::DeprecationWarning:google.gcloud",
+  "ignore::DeprecationWarning:google.iam",
+  "ignore::DeprecationWarning:google",
+  "ignore::DeprecationWarning:sphinxcontrib",
+  "ignore:`general_plain_validator_function`:DeprecationWarning::",
+  "ignore: 'RichMultiCommand':DeprecationWarning::", # this is coming from rich_click itself, nothing we can do about # that for now
+  "ignore: datetime.datetime.utcnow:DeprecationWarning:time_machine",
+  "ignore: datetime.datetime.utcnow:DeprecationWarning:jose",
+]
+markers = [
+  "sqlalchemy_integration: SQLAlchemy integration tests",
+  "server_integration: Test integration with ASGI server",
+]
+testpaths = ["tests"]
+xfail_strict = true
+
+[tool.mypy]
+packages = ["app", "tests"]
+python_version = "3.12"
+
+disallow_any_generics = false
+disallow_untyped_decorators = true
+enable_error_code = "ignore-without-code"
+implicit_reexport = false
+show_error_codes = true
+strict = true
+warn_redundant_casts = true
+warn_return_any = true
+warn_unreachable = true
+warn_unused_configs = true
+warn_unused_ignores = true
+
+
+
+[tool.pyright]
+disableBytesTypePromotions = true
+
+
+# include = ["app", "tests"]
+pythonVersion = "3.12"
+reportUnnecessaryTypeIgnoreComments = true
+
+[tool.slotscheck]
+strict-imports = false
+
+[tool.ruff]
+include = [
+  "{app,tests}/**/*.{py,pyi}",
+  "pyproject.toml"
+]
+
+lint.select = [
+  "A", # flake8-builtins
+  "B", # flake8-bugbear
+  "BLE", # flake8-blind-except
+  "C4", # flake8-comprehensions
+  "C90", # mccabe
+  "D", # pydocstyle
+  "DJ", # flake8-django
+  "DTZ", # flake8-datetimez
+  "E", # pycodestyle errors
+  "ERA", # eradicate
+  "EXE", # flake8-executable
+  "F", # pyflakes
+  "G", # flake8-logging-format
+  "I", # isort
+  "ICN", # flake8-import-conventions
+  "ISC", # flake8-implicit-str-concat
+  "N", # pep8-naming
+  "PIE", # flake8-pie
+  "PLC", # pylint - convention
+  "PLE", # pylint - error
+  "PLW", # pylint - warning
+  "PTH", # flake8-use-pathlib
+  "Q", # flake8-quotes
+  "RET", # flake8-return
+  "RUF", # Ruff-specific rules
+  "S", # flake8-bandit
+  "SIM", # flake8-simplify
+  "T10", # flake8-debugger
+  "T20", # flake8-print
+  "TCH", # flake8-type-checking
+  "TID", # flake8-tidy-imports
+  "UP", # pyupgrade
+  "W", # pycodestyle - warning
+  "YTT", # flake8-2020
+]
+
+line-length = 120
+
+lint.ignore = [
+  "E501", # pycodestyle line too long, handled by black
+  "D100", # pydocstyle - missing docstring in public module
+  "D101", # pydocstyle - missing docstring in public class
+  "D102", # pydocstyle - missing docstring in public method
+  "D103", # pydocstyle - missing docstring in public function
+  "D104", # pydocstyle - missing docstring in public package
+  "D105", # pydocstyle - missing docstring in magic method
+  "D106", # pydocstyle - missing docstring in public nested class
+  "D107", # pydocstyle - missing docstring in __init__
+  "D202", # pydocstyle - no blank lines allowed after function docstring
+  "D205", # pydocstyle - 1 blank line required between summary line and description
+  "D415", # pydocstyle - first line should end with a period, question mark, or exclamation point
+  "A003", # flake8-builtins - class attribute {name} is shadowing a python builtin
+  "B010", # flake8-bugbear - do not call setattr with a constant attribute value
+  "RUF012", # Ruff-specific rule
+  "S101", # flake8-bandit - use of assert
+]
+src = ["app", "tests"]
+target-version = "py312"
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
+[tool.ruff.lint.mccabe]
+max-complexity = 12
+
+[tool.ruff.lint.pep8-naming]
+classmethod-decorators = [
+  "classmethod",
+  "sqlalchemy.ext.declarative.declared_attr",
+  "sqlalchemy.orm.declared_attr.directive",
+  "sqlalchemy.orm.declared_attr",
+]
+
+[tool.ruff.lint.isort]
+known-first-party = ["tests"]
+
+[tool.ruff.lint.per-file-ignores]
+"examples/tests/**/*.*" = ["S101"]
+"app/lib/dependencies.py" = ["B008"]
+"tests/**/*.*" = ["S101", "DTZ"]
+
+
+[tool.ruff.format]
+docstring-code-format = true
+docstring-code-line-length = 88

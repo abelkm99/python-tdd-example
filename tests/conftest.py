@@ -1,13 +1,34 @@
+from collections.abc import AsyncGenerator
+from contextlib import asynccontextmanager
 import pytest
 import pytest_asyncio
 from faker import Faker
 import asyncio
 from sqlalchemy import text
 from sqlalchemy.exc import SQLAlchemyError
-from ..app.sql import async_engine, get_db, mapper_registry
-
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
+from app.entities import mapper_registry
 
 Faker.seed(10)
+
+database_url = "postgresql+asyncpg://root:123456789@localhost:5432/example"
+async_engine = create_async_engine(
+    url=database_url,
+    future=True,
+    pool_size=20,
+    max_overflow=20,
+    # echo=True,
+)
+
+async_session_factory: async_sessionmaker[AsyncSession] = async_sessionmaker(
+    async_engine, autoflush=False, expire_on_commit=False, class_=AsyncSession
+)
+
+
+@asynccontextmanager
+async def get_db() -> AsyncGenerator[AsyncSession, None]:
+    async with async_session_factory() as session:
+        yield session
 
 
 @pytest.fixture(scope="session")
@@ -25,7 +46,6 @@ def event_loop():
 @pytest_asyncio.fixture(scope="session", autouse=True)
 async def reset_database():
     try:
-        # print(mapper_registry.metadata.tables)
         async with async_engine.begin() as conn:
             await conn.run_sync(mapper_registry.metadata.drop_all)
             await conn.run_sync(mapper_registry.metadata.create_all)
@@ -44,6 +64,7 @@ async def db_session():
             await session.rollback()
             raise e
         finally:
+            print("***" * 10, "finally")
             # Clean up database
             tables = ", ".join(
                 '"' + table.name + '"'
