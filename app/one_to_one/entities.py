@@ -4,11 +4,11 @@ from dataclasses import dataclass, field
 from typing import Any
 import uuid
 
-from sqlalchemy import Column, Integer, Table
+from sqlalchemy import UUID, Column, Integer, String, Table
 from sqlalchemy.orm import composite, registry
 
 
-mapper_registry = registry()
+MapperRegistry = registry()
 
 
 class Entity:
@@ -37,7 +37,7 @@ class Location(Entity):
 
 location_table = Table(
     "location",
-    mapper_registry.metadata,
+    MapperRegistry.metadata,
     Column("id", Integer, primary_key=True),
     Column("x1", Integer, nullable=False),
     Column("y1", Integer, nullable=False),
@@ -46,7 +46,7 @@ location_table = Table(
 )
 
 
-mapper_registry.map_imperatively(
+MapperRegistry.map_imperatively(
     Location,
     location_table,
     # it's like saying p1 is a Point object that composes  tables x1 and x2
@@ -61,3 +61,29 @@ mapper_registry.map_imperatively(
 class UserEntity:
     id: uuid.UUID = field(default=uuid.uuid4())
     name: str
+
+
+UserTable = Table(
+    "user",
+    MapperRegistry.metadata,
+    Column(
+        "id",
+        UUID(as_uuid=True),
+        primary_key=True,
+        default=uuid.uuid4,
+        unique=True,
+        index=True,
+    ),
+    Column("name", String, nullable=False),
+)
+
+# ------------ Mappings ------------
+
+MapperRegistry.map_imperatively(
+    UserEntity,
+    UserTable,
+    properties={
+        "id": UserTable.c.id,
+        "name": UserTable.c.name,
+    },
+)

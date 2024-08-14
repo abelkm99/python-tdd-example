@@ -2,7 +2,7 @@ from faker import Faker
 import pytest
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.entities import UserEntity
+from app.one_to_one.entities import UserEntity
 
 
 @pytest.mark.asyncio

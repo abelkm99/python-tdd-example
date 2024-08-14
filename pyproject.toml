@@ -66,7 +66,7 @@ test = [
 [tool.pdm.scripts]
 ci = {composite = ["lint", "test"]}
 lint = "pre-commit run --all-files"
-test = "pytest tests -p no:warnings -s"
+test = "pytest -p no:warnings -s"
 
 
 [tool.codespell]
@@ -94,7 +94,7 @@ markers = [
   "sqlalchemy_integration: SQLAlchemy integration tests",
   "server_integration: Test integration with ASGI server",
 ]
-testpaths = ["tests"]
+testpaths = ["tests", "app"]
 xfail_strict = true
 
 [tool.mypy]

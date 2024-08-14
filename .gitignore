@@ -169,3 +169,4 @@ venv/
 
 node_modules/
 
+.git/
