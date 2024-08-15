@@ -1,15 +1,18 @@
+import asyncio
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
+
 import pytest
 import pytest_asyncio
 from faker import Faker
-import asyncio
 from sqlalchemy import text
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
+
 from app.one_to_one.entities import MapperRegistry
 
 Faker.seed(10)
+
 
 database_url = "postgresql+asyncpg://root:123456789@localhost:5432/example"
 async_engine = create_async_engine(
@@ -49,7 +52,6 @@ async def reset_database():
         async with async_engine.begin() as conn:
             await conn.run_sync(MapperRegistry.metadata.drop_all)
             await conn.run_sync(MapperRegistry.metadata.create_all)
-            pass
         await async_engine.dispose()
     except Exception as e:
         raise e

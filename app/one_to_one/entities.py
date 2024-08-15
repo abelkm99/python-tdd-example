@@ -1,59 +1,11 @@
-from dataclasses import dataclass, field
-from typing import Any
 import uuid
+from dataclasses import dataclass, field
 
-from sqlalchemy import UUID, Column, ForeignKey, Integer, String, Table
-from sqlalchemy.orm import composite, properties, registry, relationship
+from sqlalchemy import UUID, Column, ForeignKey, String, Table
+from sqlalchemy.orm import registry, relationship
 
-
+# Register the SQLAlchemy ORM
 MapperRegistry = registry()
-
-
-class Entity:
-    id: int = field(init=False)
-
-    def __eq__(self, other: Any) -> bool:
-        if isinstance(other, type(self)):
-            return self.id == other.id
-        return False
-
-    def __hash__(self):
-        return hash(self.id)
-
-
-@dataclass
-class Point:
-    x: int
-    y: int
-
-
-@dataclass(eq=False)
-class Location(Entity):
-    p1: Point
-    p2: Point
-
-
-location_table = Table(
-    "location",
-    MapperRegistry.metadata,
-    Column("id", Integer, primary_key=True),
-    Column("x1", Integer, nullable=False),
-    Column("y1", Integer, nullable=False),
-    Column("x2", Integer, nullable=False),
-    Column("y2", Integer, nullable=False),
-)
-
-
-MapperRegistry.map_imperatively(
-    Location,
-    location_table,
-    # it's like saying p1 is a Point object that composes  tables x1 and x2
-    properties={
-        "p1": composite(Point, location_table.c.x1, location_table.c.y1, init=False),
-        "p2": composite(Point, location_table.c.x2, location_table.c.y2, init=False),
-    },
-)
-
 
 # ------------ Domain Models -----------
 
@@ -63,32 +15,42 @@ One-to-One Relationship
 Tables: User and Profile
 Relationships: Each User has one Profile, and each Profile is associated with one User.
 What to Show:
-    How to create the one-to-one relationship.
-    How to access the related Profile from a User instance and vice versa.
-    How to handle cascading deletes.
+    - How to create the one-to-one relationship.
+    - How to access the related Profile from a User instance and vice versa.
+    - How to handle cascading deletes.
 """
 
 
 @dataclass(kw_only=True)
 class UserEntity:
-    id: uuid.UUID = field(default=uuid.uuid4())
+    id: uuid.UUID = field(
+        default_factory=uuid.uuid4
+    )  # UUID is auto-generated for each User
     name: str
 
-    profile: "ProfileEntitiy | None" = field(default=None, repr=False)
+    # The `profile` field represents the one-to-one relationship with `ProfileEntity`
+    profile: "ProfileEntity | None" = field(
+        default=None, repr=False
+    )  # The profile is optional
 
 
 @dataclass(kw_only=True)
-class ProfileEntitiy:
-    id: uuid.UUID = field(default=uuid.uuid4())
+class ProfileEntity:
+    id: uuid.UUID = field(
+        default_factory=uuid.uuid4
+    )  # UUID is auto-generated for each Profile
     profile_picture: str
-    user_id: uuid.UUID | None = field(default=None)
-    # making this default=False will override the preovuis user id so becarefull with that too
+    user_id: uuid.UUID | None = field(
+        default=None, repr=False
+    )  # Foreign key reference to the User
+
+    # The `user` field represents the back-reference to the User associated with this Profile
     user: "UserEntity | None" = field(init=False, repr=False)
 
 
 # --------------- ORM MAPPING ----------------
 
-
+# Define the `user` table
 UserTable = Table(
     "user",
     MapperRegistry.metadata,
@@ -103,7 +65,7 @@ UserTable = Table(
     Column("name", String, nullable=False),
 )
 
-
+# Define the `profile` table
 ProfileTable = Table(
     "profile",
     MapperRegistry.metadata,
@@ -115,44 +77,54 @@ ProfileTable = Table(
         unique=True,
         index=True,
     ),
-    Column("picture", String, nullable=False),
+    Column("profile_picture", String, nullable=False),
     Column(
         "user_id",
         UUID(as_uuid=True),
-        ForeignKey("user.id"),
-        nullable=True,  # let's make is optional if we can map optional fields the rest is easy
-        unique=True,
+        ForeignKey("user.id", ondelete="CASCADE"),  # Foreign key with cascading delete
+        nullable=True,  # Optional relationship
+        unique=True,  # Enforces one-to-one relationship
     ),
 )
 
-
 # ------------ Mappings ------------
 
+# Map the UserEntity class to the user table
 MapperRegistry.map_imperatively(
     UserEntity,
     UserTable,
     properties={
         "id": UserTable.c.id,
         "name": UserTable.c.name,
-        "profile": relationship(ProfileEntitiy, uselist=False, back_populates="user"),
+        # One-to-one relationship; `uselist=False` ensures only one profile per user
+        "profile": relationship("ProfileEntity", uselist=False, back_populates="user"),
     },
 )
 
+# Map the ProfileEntity class to the profile table
 MapperRegistry.map_imperatively(
-    ProfileEntitiy,
+    ProfileEntity,
     ProfileTable,
     properties={
         "id": ProfileTable.c.id,
-        "profile_picture": ProfileTable.c.picture,  # I can map different attributes names with different column names
-        "user": relationship(UserEntity, back_populates="profile"),
+        "profile_picture": ProfileTable.c.profile_picture,  # Custom attribute-to-column mapping
+        "user": relationship(
+            "UserEntity", back_populates="profile"
+        ),  # Back-reference to UserEntity
     },
 )
 
 """
-as a rule of thumb use the keys to create the relationship
-for the relationship objects don't make the default none.
-making this none would make the foriegn key is going to be None.
-so when you insert a statement it's going to pass None.
+Explanation:
+------------
 
-this is not going to be an issue if the fields are optional
+1. `default_factory=uuid.uuid4` in the dataclass field is used instead of `default=uuid.uuid4` to ensure that a new UUID is generated each time a new instance is created.
+
+2. The `profile` field in `UserEntity` and `user` field in `ProfileEntity` represent the one-to-one relationship. These are marked as optional (`None`) but should not be set as the default value of the relationship object in the ORM mapping. Setting it as `None` might cause the foreign key to be `None`, which could lead to unexpected behavior, especially if the field is not nullable in the database schema.
+
+3. In the `ProfileTable`, the `user_id` column is both nullable and unique. Nullable allows the creation of a profile without a user initially (useful in some scenarios), and unique enforces the one-to-one relationship.
+
+4. The `ondelete="CASCADE"` in the `ForeignKey` ensures that when a `User` is deleted, the associated `Profile` is also deleted automatically, maintaining referential integrity.
+
+5. The `uselist=False` parameter in the `relationship` ensures that the relationship between `User` and `Profile` is indeed one-to-one, as it prevents `User` from having multiple profiles.
 """
