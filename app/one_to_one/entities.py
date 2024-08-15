@@ -1,11 +1,9 @@
-from collections.abc import AsyncGenerator
-from contextlib import asynccontextmanager
 from dataclasses import dataclass, field
 from typing import Any
 import uuid
 
-from sqlalchemy import UUID, Column, Integer, String, Table
-from sqlalchemy.orm import composite, registry
+from sqlalchemy import UUID, Column, ForeignKey, Integer, String, Table
+from sqlalchemy.orm import composite, properties, registry, relationship
 
 
 MapperRegistry = registry()
@@ -57,10 +55,38 @@ MapperRegistry.map_imperatively(
 )
 
 
+# ------------ Domain Models -----------
+
+"""
+One-to-One Relationship
+------------------------
+Tables: User and Profile
+Relationships: Each User has one Profile, and each Profile is associated with one User.
+What to Show:
+    How to create the one-to-one relationship.
+    How to access the related Profile from a User instance and vice versa.
+    How to handle cascading deletes.
+"""
+
+
 @dataclass(kw_only=True)
 class UserEntity:
     id: uuid.UUID = field(default=uuid.uuid4())
     name: str
+
+    profile: "ProfileEntitiy | None" = field(default=None, repr=False)
+
+
+@dataclass(kw_only=True)
+class ProfileEntitiy:
+    id: uuid.UUID = field(default=uuid.uuid4())
+    profile_picture: str
+    user_id: uuid.UUID | None = field(default=None)
+    # making this default=False will override the preovuis user id so becarefull with that too
+    user: "UserEntity | None" = field(init=False, repr=False)
+
+
+# --------------- ORM MAPPING ----------------
 
 
 UserTable = Table(
@@ -77,6 +103,29 @@ UserTable = Table(
     Column("name", String, nullable=False),
 )
 
+
+ProfileTable = Table(
+    "profile",
+    MapperRegistry.metadata,
+    Column(
+        "id",
+        UUID(as_uuid=True),
+        primary_key=True,
+        default=uuid.uuid4,
+        unique=True,
+        index=True,
+    ),
+    Column("picture", String, nullable=False),
+    Column(
+        "user_id",
+        UUID(as_uuid=True),
+        ForeignKey("user.id"),
+        nullable=True,  # let's make is optional if we can map optional fields the rest is easy
+        unique=True,
+    ),
+)
+
+
 # ------------ Mappings ------------
 
 MapperRegistry.map_imperatively(
@@ -85,5 +134,25 @@ MapperRegistry.map_imperatively(
     properties={
         "id": UserTable.c.id,
         "name": UserTable.c.name,
+        "profile": relationship(ProfileEntitiy, uselist=False, back_populates="user"),
     },
 )
+
+MapperRegistry.map_imperatively(
+    ProfileEntitiy,
+    ProfileTable,
+    properties={
+        "id": ProfileTable.c.id,
+        "profile_picture": ProfileTable.c.picture,  # I can map different attributes names with different column names
+        "user": relationship(UserEntity, back_populates="profile"),
+    },
+)
+
+"""
+as a rule of thumb use the keys to create the relationship
+for the relationship objects don't make the default none.
+making this none would make the foriegn key is going to be None.
+so when you insert a statement it's going to pass None.
+
+this is not going to be an issue if the fields are optional
+"""
