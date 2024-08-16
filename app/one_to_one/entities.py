@@ -1,7 +1,7 @@
 import uuid
 from dataclasses import dataclass, field
 
-from sqlalchemy import UUID, Column, ForeignKey, String, Table
+from sqlalchemy import INTEGER, UUID, Column, ForeignKey, String, Table
 from sqlalchemy.orm import registry, relationship
 
 # Register the SQLAlchemy ORM
@@ -33,6 +33,8 @@ class UserEntity:
         default=None, repr=False
     )  # The profile is optional
 
+    social_medias: list["SocialMediaEntity"] = field(default_factory=list)
+
 
 @dataclass(kw_only=True)
 class ProfileEntity:
@@ -46,6 +48,12 @@ class ProfileEntity:
 
     # The `user` field represents the back-reference to the User associated with this Profile
     user: "UserEntity | None" = field(init=False, repr=False)
+
+
+@dataclass(kw_only=True)
+class SocialMediaEntity:
+    user_id: uuid.UUID
+    social_media: str
 
 
 # --------------- ORM MAPPING ----------------
@@ -87,6 +95,16 @@ ProfileTable = Table(
     ),
 )
 
+# this is to check if i can this data from the user
+SocialMediaTable = Table(
+    "social_media",
+    MapperRegistry.metadata,
+    Column("id", INTEGER, autoincrement=True, primary_key=True),
+    Column("user_id", UUID(as_uuid=True), ForeignKey("user.id"), nullable=False),
+    Column("social_media", String(100), nullable=False),
+)
+
+
 # ------------ Mappings ------------
 
 # Map the UserEntity class to the user table
@@ -98,6 +116,9 @@ MapperRegistry.map_imperatively(
         "name": UserTable.c.name,
         # One-to-one relationship; `uselist=False` ensures only one profile per user
         "profile": relationship("ProfileEntity", uselist=False, back_populates="user"),
+        "social_medias": relationship(
+            SocialMediaEntity
+        ),  # this line must be added otherwise it will require a flush first
     },
 )
 
@@ -111,6 +132,15 @@ MapperRegistry.map_imperatively(
         "user": relationship(
             "UserEntity", back_populates="profile"
         ),  # Back-reference to UserEntity
+    },
+)
+
+MapperRegistry.map_imperatively(
+    SocialMediaEntity,
+    SocialMediaTable,
+    properties={
+        "user_id": SocialMediaTable.c.user_id,
+        "social_media": SocialMediaTable.c.social_media,
     },
 )
 

@@ -20,7 +20,7 @@ async_engine = create_async_engine(
     future=True,
     pool_size=20,
     max_overflow=20,
-    # echo=True,
+    # echo=True, #noqa ERA001
 )
 
 async_session_factory: async_sessionmaker[AsyncSession] = async_sessionmaker(

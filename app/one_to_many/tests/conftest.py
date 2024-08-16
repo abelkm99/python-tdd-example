@@ -11,7 +11,6 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_asyn
 
 from app.one_to_many.entities import MapperRegistry
 
-
 Faker.seed(10)
 
 

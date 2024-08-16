@@ -1,13 +1,10 @@
 from collections.abc import Callable
 
-from faker import Faker
 import pytest
 from sqlalchemy import delete, select
 from sqlalchemy.exc import MissingGreenlet
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
-from sqlalchemy.orm.interfaces import ORMOption
-
 
 from app.one_to_many.entities import BookEntity, PublisherEntity, PublisherTable
 
@@ -131,8 +128,7 @@ async def test_publisher_book_orm_mapping_will_create_empty_list_of_user(
     db_session: AsyncSession,
     publisher: PublisherEntity,
 ):
-    """
-    In this test we want to check if we can actually get empty array if we don't have any relation
+    """In this test we want to check if we can actually get empty array if we don't have any relation
     """
 
     stmt = (

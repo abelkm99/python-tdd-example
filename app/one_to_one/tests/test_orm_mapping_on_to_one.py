@@ -9,6 +9,8 @@ from sqlalchemy.orm import selectinload
 
 from app.one_to_one.entities import (
     ProfileEntity,
+    ProfileTable,
+    SocialMediaEntity,
     UserEntity,
     UserTable,
 )
@@ -203,3 +205,43 @@ async def test_deleting_user_will_delete_profile(db_session: AsyncSession, fake:
     # Attempt to fetch the user and profile
     assert not await db_session.get(UserEntity, user.id)
     assert not await db_session.get(ProfileEntity, profile.id)
+
+
+@pytest.mark.asyncio
+async def test_user_profile_and_multiple_social_media_mapping_works_and_chec_nav(
+    db_session: AsyncSession,
+    fake: Faker,
+):
+    # Create a new UserEntity and directly associate a ProfileEntity with it
+    user = UserEntity(name="abel", profile=ProfileEntity(profile_picture=fake.url()))
+    social_medias = [
+        SocialMediaEntity(social_media=fake.url(), user_id=user.id),
+        SocialMediaEntity(social_media=fake.url(), user_id=user.id),
+        SocialMediaEntity(social_media=fake.url(), user_id=user.id),
+    ]
+
+    # Add the user (and implicitly the profile) to the session and commit
+    db_session.add(user)
+    db_session.add_all(social_medias)
+    await db_session.commit()
+
+    await db_session.reset()
+
+    stmt = (
+        select(ProfileEntity, UserEntity)
+        .join(UserEntity, UserTable.c.id == ProfileTable.c.user_id)
+        .options(
+            selectinload(ProfileEntity.user)  # pyright: ignore[reportArgumentType]
+        )
+        .options(
+            selectinload(
+                UserEntity.social_medias  # pyright: ignore[reportArgumentType]
+            )
+        )
+    )
+    res = (await db_session.execute(stmt)).scalar_one_or_none()
+
+    assert res
+
+    assert res.user
+    assert res.user.social_medias
