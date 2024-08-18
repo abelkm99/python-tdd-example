@@ -64,6 +64,7 @@ async def test_orm_mapping_works_by_just_appending(db_session: AsyncSession):
         EnrollmentTable.c.student_id == student.id,
         EnrollmentTable.c.course_id == course.id,
     )
+
     res = await db_session.execute(stmt)
     res = res.scalar_one_or_none()
     assert res
