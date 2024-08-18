@@ -103,6 +103,10 @@ async def test_orm_mapping_works_by_just_appending(db_session: AsyncSession):
 
 @pytest.mark.asyncio
 async def test_orm_mapping_works_by_just_using_the_relation(db_session: AsyncSession):
+    """
+    Prefered way to do it.
+    avoid from getting all kinds of errors.
+    """
     student = StudentEntity(name="abel")
     bio = CourseEntity(name="biology")
     math = CourseEntity(name="math")
@@ -160,10 +164,69 @@ async def test_orm_mapping_works_by_just_using_the_relation(db_session: AsyncSes
         )
         .where(StudentTable.c.name == "abel")
     )
-    print(stmt)
     db_student = (await db_session.execute(stmt)).scalar_one_or_none()
     assert db_student
     assert db_student.name == "abel"
     assert math in db_student.courses
     assert bio in db_student.courses
     assert physics not in db_student.courses
+
+
+# deleting rows
+@pytest.mark.asyncio
+async def test_orm_mapping_works_by_deleting_rows(db_session: AsyncSession):
+    pass
+    student = StudentEntity(name="abel")
+    bio = CourseEntity(name="biology")
+    math = CourseEntity(name="math")
+    physics = CourseEntity(name="physics ")
+    enrollments = [
+        EnrollmentEntity(course_id=bio.id, student_id=student.id),
+        EnrollmentEntity(course_id=math.id, student_id=student.id),
+    ]
+    db_session.add(student)  # add the student
+    db_session.add_all([bio, math, physics])  # add the courses
+    await db_session.flush()
+    db_session.add_all(enrollments)  # add the student's relationship
+
+    await db_session.commit()
+    await db_session.reset()
+
+    await db_session.reset()
+
+    stmt = (
+        select(StudentEntity)
+        .options(
+            selectinload(
+                StudentEntity.courses,  # pyright: ignore[reportArgumentType]
+            )
+        )
+        .where(StudentTable.c.name == "abel")
+    )
+    db_student = (await db_session.execute(stmt)).scalar_one_or_none()
+    assert db_student
+    assert db_student.name == "abel"
+    assert math in db_student.courses
+    assert bio in db_student.courses
+    assert physics not in db_student.courses
+
+    # delete math
+
+    db_student.courses.remove(math)
+    await db_session.commit()
+
+    # check if it's removed
+    math_enrollment = (
+        await db_session.execute(
+            select(EnrollmentEntity).where(EnrollmentTable.c.course_id == math.id)
+        )
+    ).scalar_one_or_none()
+    assert not math_enrollment
+
+    # biology should still be there
+    bio_enrollment = (
+        await db_session.execute(
+            select(EnrollmentEntity).where(EnrollmentTable.c.course_id == bio.id)
+        )
+    ).scalar_one_or_none()
+    assert bio_enrollment

@@ -25,7 +25,7 @@ This example doesn't show the association table examples
 class StudentEntity:
     id: uuid.UUID = field(default_factory=uuid.uuid4)
     name: str
-    courses: list["CourseEntity"] = field(default_factory=list)
+    courses: list["CourseEntity"] = field(default_factory=list, repr=False)
 
     def __eq__(self, other):
         return self.id == other.id and self.name == other.name
@@ -35,7 +35,7 @@ class StudentEntity:
 class CourseEntity:
     id: uuid.UUID = field(default_factory=uuid.uuid4)
     name: str
-    students: list["StudentEntity"] = field(default_factory=list)
+    students: list["StudentEntity"] = field(default_factory=list, repr=False)
 
     def __eq__(self, other):
         return self.id == other.id and self.name == other.name
