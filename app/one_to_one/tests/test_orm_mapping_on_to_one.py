@@ -9,7 +9,6 @@ from sqlalchemy.orm import selectinload
 
 from app.one_to_one.entities import (
     ProfileEntity,
-    ProfileTable,
     SocialMediaEntity,
     UserEntity,
     UserTable,
@@ -227,16 +226,9 @@ async def test_user_profile_and_multiple_social_media_mapping_works_and_chec_nav
 
     await db_session.reset()
 
-    stmt = (
-        select(ProfileEntity, UserEntity)
-        .join(UserEntity, UserTable.c.id == ProfileTable.c.user_id)
-        .options(
-            selectinload(ProfileEntity.user)  # pyright: ignore[reportArgumentType]
-        )
-        .options(
-            selectinload(
-                UserEntity.social_medias  # pyright: ignore[reportArgumentType]
-            )
+    stmt = select(ProfileEntity).options(
+        selectinload(ProfileEntity.user).selectinload(
+            UserEntity.social_medias  # pyright: ignore[reportArgumentType]
         )
     )
     res = (await db_session.execute(stmt)).scalar_one_or_none()
