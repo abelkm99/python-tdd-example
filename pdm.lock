@@ -10,6 +10,7 @@ content_hash = "sha256:637fe52d81205229dfc553b2ede34f5a0deac586469ced4d0f5a2c4c5
 [[metadata.targets]]
 requires_python = "~=3.8"
 
+
 [[package]]
 name = "anyio"
 version = "4.4.0"
