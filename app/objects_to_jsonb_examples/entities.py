@@ -12,8 +12,11 @@ from sqlalchemy.types import TypeDecorator
 
 MapperRegistry = registry()
 
-
 @dataclass
+class BorrowerAdress:
+    street: str = "1234 Main Street"
+
+@dataclass(kw_only=True)
 class BorrowerInfo:
     id: int
     name: str = "John Doe"
@@ -23,6 +26,7 @@ class BorrowerInfo:
         metadata={"title": "The age of the user", "description": "do not lie!"},
     )
     height: int | None = Field(default=None, title="The height in cm", ge=50, le=300)
+    address: BorrowerAdress = Field(default_factory=BorrowerAdress)
 
 
 class PydanticSerializer(TypeDecorator):
@@ -36,12 +40,12 @@ class PydanticSerializer(TypeDecorator):
     def process_bind_param(self, value, dialect):
         if value is None:
             raise ValueError("value is None")
-        return TypeAdapter(self.schema).dump_json(value).decode()
+        return TypeAdapter(self.schema).dump_python(value)
 
     def process_result_value(self, value, dialect):
         if value is None:
             raise ValueError("value is None")
-        return self.schema(**json.loads(value))
+        return self.schema(**value)
 
 
 @dataclasses.dataclass(kw_only=True)
