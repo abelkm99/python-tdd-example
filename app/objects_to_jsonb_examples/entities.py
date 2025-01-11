@@ -1,6 +1,6 @@
 import dataclasses
-import json
 import uuid
+from datetime import UTC, datetime
 from typing import Any
 
 from pydantic import Field, TypeAdapter
@@ -12,9 +12,23 @@ from sqlalchemy.types import TypeDecorator
 
 MapperRegistry = registry()
 
+
+@dataclasses.dataclass(kw_only=True)
+class TimeStampedEntity:
+    """A base class for entities with created_at and updated_at fields
+    Attributes:
+        created_at (datetime): The entity creation time
+        updated_at (datetime): The entity update time
+    """
+
+    created_at: datetime = dataclasses.field(default_factory=lambda: datetime.now(tz=UTC))
+    updated_at: datetime = dataclasses.field(default_factory=lambda: datetime.now(tz=UTC))
+
+
 @dataclass
-class BorrowerAdress:
+class BorrowerAdress(TimeStampedEntity):
     street: str = "1234 Main Street"
+
 
 @dataclass(kw_only=True)
 class BorrowerInfo:
@@ -40,7 +54,7 @@ class PydanticSerializer(TypeDecorator):
     def process_bind_param(self, value, dialect):
         if value is None:
             raise ValueError("value is None")
-        return TypeAdapter(self.schema).dump_python(value)
+        return TypeAdapter(self.schema).dump_python(value, mode="json")
 
     def process_result_value(self, value, dialect):
         if value is None:
