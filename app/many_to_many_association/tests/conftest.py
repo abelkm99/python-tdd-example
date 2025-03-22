@@ -9,7 +9,7 @@ from sqlalchemy import text
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
-from app.many_to_mant_association.entities import MapperRegistry
+from app.many_to_many_association.entities import MapperRegistry
 
 Faker.seed(10)
 

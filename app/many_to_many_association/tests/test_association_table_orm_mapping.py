@@ -3,7 +3,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from app.many_to_mant_association.entities import (
+from app.many_to_many_association.entities import (
     ConferenceEntity,
     SpeakerEntity,
     SpeakerTable,
