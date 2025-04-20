@@ -1,4 +1,4 @@
 # Readme
 - [ ] Docker Setup.
-- [ ] CI-CD
+- [ ] CI-CD.
 - [ ] move to UV.
